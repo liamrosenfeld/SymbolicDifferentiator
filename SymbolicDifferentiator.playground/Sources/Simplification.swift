@@ -22,15 +22,6 @@ public extension Expr {
             return simplifySum(exprs)
         case .product(let exprs):
             return simplifyProduct(exprs)
-        case .quotient(let lhs, let rhs):
-            let lSimple = lhs.simplified()
-            let rSimple = rhs.simplified()
-            
-            if case let .const(val) = lSimple, val == 0 {
-                return 0
-            }
-            
-            return lSimple / rSimple
         case .power(let base, let exp):
             // 0 and 1 exponents
             if exp == 0 {
@@ -72,6 +63,9 @@ public extension Expr {
                 if case let .const(const) = inner {
                     constSum -= const
                 } else {
+                    if let cancelIndex = everythingElse.firstIndex(of: inner) {
+                        everythingElse.remove(at: cancelIndex)
+                    }
                     everythingElse.append(simple)
                 }
             case .product(let exprs):
@@ -125,8 +119,7 @@ public extension Expr {
     private func simplifyProduct(_ exprs: [Expr]) -> Expr {
         // attributes compacted into
         var totalCoefficient: Decimal = 1
-        var totalExponent: Decimal = 0
-        var everythingElse: [Expr] = []
+        var exprsAndExps: [Expr : Decimal] = [:]
         
         // break apart and sort
         // product should have already been flattened
@@ -139,39 +132,49 @@ public extension Expr {
                 }
                 totalCoefficient *= const
             case .negate(let inner):
-                if case let .const(const) = inner {
-                    totalCoefficient *= -const
-                } else if case .variable = inner {
-                    totalCoefficient *= -1
-                    totalExponent += 1
-                } else {
-                    everythingElse.append(simple)
+                totalCoefficient *= -1
+                switch inner {
+                case .const(let const):
+                    totalCoefficient *= const
+                case .power(let base, let exponent):
+                    if case let .product(innerExprs) = base {
+                        for innerExpr in innerExprs {
+                            exprsAndExps[innerExpr, default: 0] += exponent
+                        }
+                    } else {
+                        exprsAndExps[base, default: 0] += exponent
+                    }
+                default:
+                    exprsAndExps[expr, default: 0] += 1
                 }
-            case .variable:
-                totalExponent += 1
             case .power(let base, let exponent):
-                let simplifiedBase = base.simplified()
-                if case .variable = simplifiedBase {
-                    totalExponent += exponent
+                if case let .product(innerExprs) = base {
+                    for innerExpr in innerExprs {
+                        exprsAndExps[innerExpr, default: 0] += exponent
+                    }
                 } else {
-                    everythingElse.append(simplifiedBase ^ exponent)
+                    exprsAndExps[base, default: 0] += exponent
                 }
             default:
-                everythingElse.append(simple)
+                exprsAndExps[expr, default: 0] += 1
             }
         }
         
         // reassemble
+        // TODO: group terms of same power together?? -- maybe just a negative power
         var simplified: [Expr] = []
         if totalCoefficient != 0 {
             simplified.append(.const(totalCoefficient))
         }
-        if totalExponent == 1 {
-            simplified.append(.variable)
-        } else if totalExponent != 0 {
-            simplified.append(.power(.variable, totalExponent))
+        for (expr, exp) in exprsAndExps {
+            if exp == 1 {
+                simplified.append(expr)
+            } else if exp == 0 {
+                continue
+            } else {
+                simplified.append(.power(expr, exp))
+            }
         }
-        simplified.append(contentsOf: everythingElse)
         
         // unwrap if count is one
         if simplified.count == 1 {

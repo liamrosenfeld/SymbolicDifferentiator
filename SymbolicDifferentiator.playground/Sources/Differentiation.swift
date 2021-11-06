@@ -19,8 +19,6 @@ public extension Expr {
                 return .product(newExprs)
             }
             return .sum(products)
-        case .quotient(let high, let low):
-            return (low * high.deriv() - high * low.deriv()) / (low ^ 2)
         case .power(let base, let exp):
             return .const(exp) * (base ^ (exp - 1)) * base.deriv()
         }

@@ -1,7 +1,7 @@
 let x: Expr = .variable
 
 print("orig:")
-let expr: Expr = (3.0 * x) * (3.0 * (x ^ 2.0)) + (3 * x) + ((1 - 2 - 3) * (1 * 2 * x))
+let expr: Expr = (3.0 * x) * (3.0 * (x ^ 2.0)) + (3 * x) / ((1 - 2 - 3) * (1 * 2 * x))
 print(expr.toString())
 
 print("\norig tree:")

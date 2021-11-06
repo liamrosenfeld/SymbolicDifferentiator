@@ -6,6 +6,7 @@ public indirect enum Expr {
     case negate(Expr)
     case sum([Expr])
     case product([Expr])
-    case quotient(Expr, Expr)
     case power(Expr, Decimal)
 }
+
+extension Expr: Hashable { }

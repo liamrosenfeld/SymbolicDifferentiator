@@ -36,10 +36,8 @@ public extension Expr {
                 string += ")"
                 return string
             }
-        case .quotient(let lhs, let rhs):
-            return "(\(lhs.toString()) / \(rhs.toString()))"
         case .power(let base, let exp):
-            return "(\(base.toString())^\(exp))"
+            return "(\(base.toString()))^\(exp)"
         }
     }
     
@@ -68,10 +66,6 @@ public extension Expr {
                 returnString += "\n" + expr.prettyTree(indent: newIndent, last: index == exprs.count - 1)
             }
             return returnString
-        case .quotient(let lhs, let rhs):
-            return indent + jointSym + "/"
-            + "\n" + lhs.prettyTree(indent: newIndent, last: false)
-            + "\n" + rhs.prettyTree(indent: newIndent, last: true)
         case .power(let base, let exp):
             return indent + jointSym + "^\(exp)"
             + "\n" + base.prettyTree(indent: newIndent, last: true)
