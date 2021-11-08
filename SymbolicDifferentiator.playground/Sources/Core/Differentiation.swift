@@ -7,8 +7,6 @@ public extension Expr {
             return 1
         case .const(_):
             return 0
-        case .negate(let expr):
-            return .negate(expr.deriv())
         case .sum(let exprs):
             return .sum(exprs.map { $0.deriv() })
         case .product(let exprs):

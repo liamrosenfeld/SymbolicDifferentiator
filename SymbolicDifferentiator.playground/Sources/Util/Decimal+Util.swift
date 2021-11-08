@@ -12,4 +12,9 @@ extension Decimal {
     var int: Int {
         (self as NSDecimalNumber).intValue
     }
+    
+    mutating func round() {
+        var lhs = self
+        NSDecimalRound(&self, &lhs, 0, .plain)
+    }
 }

@@ -7,8 +7,6 @@ public extension Expr {
             return val
         case .const(let const):
             return const
-        case .negate(let inner):
-            return -1 * inner.evaluate(at: val)
         case .sum(let inners):
             return inners.reduce(0) { $0 + $1.evaluate(at: val) }
         case .product(let inners):

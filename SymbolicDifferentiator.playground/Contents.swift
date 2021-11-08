@@ -55,3 +55,18 @@ print(j.prettyTree())
 
 print(h(3))
 print(j(3))
+
+print("")
+print("new sum simp test:")
+let sumTest: Expr = (3 * (x-1)) + (3 * (x-1)) + 5 + 7
+print(sumTest.prettyTree())
+print()
+let sumTestSimp = sumTest.flattened().simplified()
+print(sumTestSimp.prettyTree())
+print(sumTestSimp.toString())
+
+print("")
+print("difference printing:")
+let negateTest: Expr = (1 - (3 * x)).flattened().simplified()
+print(negateTest.prettyTree())
+print(negateTest.toString())

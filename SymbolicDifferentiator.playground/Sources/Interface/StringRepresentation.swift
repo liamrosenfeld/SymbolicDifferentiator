@@ -7,13 +7,33 @@ public extension Expr {
             return "x"
         case .const(let const):
             return constToString(const)
-        case .negate(let expr):
-            return "-\(expr.toString())"
-        case .sum(let exprs):
-            var string = "(\(exprs[0].toString())"
-            for expr in exprs.dropFirst() {
-                if case let .negate(inner) = expr {
-                    string += " - \(inner.toString())"
+        case .sum(var exprs):
+            var string = "(\(exprs.removeFirst().toString())"
+            for expr in exprs {
+                if case let .const(val) = expr {
+                    let sign = val < 0 ? "-" : "+"
+                    string += " \(sign) \(constToString(abs(val)))"
+                } else if case var .product(inner) = expr {
+                    let sign: String = {
+                        guard let (index, const) = inner.firstConstWithIndex() else {
+                            return "+"
+                        }
+                        if const < 0 {
+                            if const == -1 {
+                                inner.remove(at: index)
+                            } else {
+                                inner[index] = .const(abs(const))
+                            }
+                            return "-"
+                        } else {
+                            return "+"
+                        }
+                    }()
+                    if inner.count == 1 {
+                        string += " \(sign) \(inner[0].toString())"
+                    } else {
+                        string += " \(sign) \(Expr.product(inner).toString())"
+                    }
                 } else {
                     string += " + \(expr.toString())"
                 }
@@ -27,7 +47,11 @@ public extension Expr {
                let firstConstIndex = exprs.firstConstIndex()
             {
                 let firstConst = exprs.remove(at: firstConstIndex)
-                return "\(firstConst.toString())\(exprs[0].toString())"
+                if (firstConst == -1) {
+                    return "-\(exprs[0].toString())"
+                } else {
+                    return "\(firstConst.toString())\(exprs[0].toString())"
+                }
             }
             // display it normally
             else {
@@ -54,9 +78,6 @@ public extension Expr {
             return indent + jointSym + "x"
         case .const(let const):
             return indent + jointSym + constToString(const)
-        case .negate(let expr):
-            return indent + jointSym + "NEG"
-            + "\n" + expr.prettyTree(indent: newIndent, last: true)
         case .sum(let exprs):
             var returnString = indent + jointSym + "+"
             for (index, expr) in exprs.enumerated() {
@@ -81,10 +102,13 @@ public extension Expr {
 }
 
 fileprivate func constToString(_ const: Decimal) -> String {
-    if const == pi {
-        return "π"
-    } else if const == e {
-        return "e"
+    let absVal = abs(const)
+    if absVal == pi {
+        let sign = const < 0 ? "-" : ""
+        return "\(sign)π"
+    } else if absVal == e {
+        let sign = const < 0 ? "-" : ""
+        return "\(sign)e"
     } else {
         return "\(const)"
     }

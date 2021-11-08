@@ -23,7 +23,7 @@ public func cos(_ expr: Expr) -> Expr {
     let fn = FuncDecl(
         name: "cos",
         deriv: { expr in
-            .negate(sin(expr))
+            sin(expr) * -1
         },
         eval: { val in
             Decimal(cos(val.double))

@@ -5,10 +5,6 @@ extension Array where Element == Expr {
         for expr in self {
             if case let .const(val) = expr {
                 return val
-            } else if case let .negate(inner) = expr {
-                if case let .const(innerVal) = inner {
-                    return -1 * innerVal
-                }
             }
         }
         return nil
@@ -18,16 +14,19 @@ extension Array where Element == Expr {
         return self.firstIndex { expr in
             if case .const(_) = expr {
                 return true
-            } else if case let .negate(inner) = expr {
-                if case .const(_) = inner {
-                    return true
-                } else {
-                    return false
-                }
             } else {
                 return false
             }
         }
+    }
+    
+    func firstConstWithIndex() -> (Int, Decimal)? {
+        for (index, expr) in self.enumerated() {
+            if case let .const(val) = expr {
+                return (index, val)
+            }
+        }
+        return nil
     }
     
     func firstPowOfVar() -> Decimal? {
