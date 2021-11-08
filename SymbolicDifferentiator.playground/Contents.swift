@@ -35,3 +35,10 @@ print(simpDeriv.prettyTree())
 
 print("\nsimp deriv expr:")
 print(simpDeriv.toString())
+
+print("\nevaluation and sugar test:")
+let f: Expr = 20 * (x ^ 2)
+let g: Expr = f′
+
+print("\(f.toString()) \(f(3))")
+print("\(g.toString()) \(g(3))")
