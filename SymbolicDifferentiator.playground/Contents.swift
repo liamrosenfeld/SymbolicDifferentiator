@@ -1,5 +1,3 @@
-let x: Expr = .variable
-
 print("orig:")
 let expr: Expr = (3.0 * x) * (3.0 * (x ^ 2.0)) + (3 * x) / ((1 - 2 - 3) * (1 * 2 * x))
 print(expr.toString())
@@ -42,3 +40,18 @@ let g: Expr = f′
 
 print("\(f.toString()) \(f(3))")
 print("\(g.toString()) \(g(3))")
+
+print("\nfunctions test:")
+let h: Expr = (ln(.const(e)) * log(3, x) * cos(x) - (sin(.const(pi) * x) + sin(.const(2 * pi))))
+    .flattened().simplified()
+let j: Expr = h′
+
+print("")
+print(h.toString())
+print(h.prettyTree())
+print("")
+print(j.toString())
+print(j.prettyTree())
+
+print(h(3))
+print(j(3))

@@ -21,6 +21,8 @@ public extension Expr {
             return .sum(products)
         case .power(let base, let exp):
             return .const(exp) * (base ^ (exp - 1)) * base.deriv()
+        case .fn(let fn, let expr):
+            return fn.deriv(expr) * expr.deriv()
         }
     }
 }

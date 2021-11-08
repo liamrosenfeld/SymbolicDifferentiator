@@ -1,10 +1,12 @@
+import Foundation
+
 public extension Expr {
     func toString() -> String {
         switch self {
         case .variable:
             return "x"
         case .const(let const):
-            return "\(const)"
+            return constToString(const)
         case .negate(let expr):
             return "-\(expr.toString())"
         case .sum(let exprs):
@@ -38,6 +40,8 @@ public extension Expr {
             }
         case .power(let base, let exp):
             return "(\(base.toString()))^\(exp)"
+        case .fn(let fn, let expr):
+            return "\(fn.name)(\(expr.toString()))"
         }
     }
     
@@ -49,7 +53,7 @@ public extension Expr {
         case .variable:
             return indent + jointSym + "x"
         case .const(let const):
-            return indent + jointSym + "\(const)"
+            return indent + jointSym + constToString(const)
         case .negate(let expr):
             return indent + jointSym + "NEG"
             + "\n" + expr.prettyTree(indent: newIndent, last: true)
@@ -69,6 +73,19 @@ public extension Expr {
         case .power(let base, let exp):
             return indent + jointSym + "^\(exp)"
             + "\n" + base.prettyTree(indent: newIndent, last: true)
+        case .fn(let fn, let expr):
+            return indent + jointSym + fn.name
+            + "\n" + expr.prettyTree(indent: newIndent, last: true)
         }
+    }
+}
+
+fileprivate func constToString(_ const: Decimal) -> String {
+    if const == pi {
+        return "π"
+    } else if const == e {
+        return "e"
+    } else {
+        return "\(const)"
     }
 }

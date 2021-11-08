@@ -3,10 +3,6 @@ import Foundation
 public extension Expr {
     func simplified() -> Expr {
         switch self {
-        case .variable:
-            return self
-        case .const(_):
-            return self
         case .negate(let expr):
             let exprSimple = expr.simplified()
             // cancel nested negatives
@@ -42,6 +38,20 @@ public extension Expr {
             }
             
             return bSimple ^ exp
+        case .fn(let fn, let expr):
+            // simplify if expr is a constant that returns an integer
+            if case let .const(val) = expr {
+                let appl = fn.eval(val)
+                if abs(appl.double.truncatingRemainder(dividingBy: 1)) < Double.ulpOfOne * 2 {
+                    return .const(Decimal(appl.int))
+                } else {
+                    return self
+                }
+            } else {
+                return self
+            }
+        default:
+            return self
         }
     }
     
@@ -145,7 +155,7 @@ public extension Expr {
                         exprsAndExps[base, default: 0] += exponent
                     }
                 default:
-                    exprsAndExps[expr, default: 0] += 1
+                    exprsAndExps[inner, default: 0] += 1
                 }
             case .power(let base, let exponent):
                 if case let .product(innerExprs) = base {
@@ -163,8 +173,8 @@ public extension Expr {
         // reassemble
         // TODO: group terms of same power together?? -- maybe just a negative power
         var simplified: [Expr] = []
-        if totalCoefficient != 0 {
-            simplified.append(.const(totalCoefficient))
+        if abs(totalCoefficient) != 1 {
+            simplified.append(.const(abs(totalCoefficient)))
         }
         for (expr, exp) in exprsAndExps {
             if exp == 1 {
@@ -178,15 +188,17 @@ public extension Expr {
         
         // unwrap if count is one
         if simplified.count == 1 {
-            return simplified[0]
+            if totalCoefficient < 0 {
+                return .negate(simplified[0])
+            } else {
+                return simplified[0]
+            }
         }
         
-        return .product(simplified)
-    }
-}
-
-extension Decimal {
-    func pow(exp: Decimal) -> Decimal {
-        return Decimal(Darwin.pow(Double(truncating: self as NSNumber), Double(truncating: exp as NSNumber)))
+        if totalCoefficient < 0 {
+            return .negate(.product(simplified))
+        } else {
+            return .product(simplified)
+        }
     }
 }

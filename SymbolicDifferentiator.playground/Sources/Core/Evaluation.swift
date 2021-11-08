@@ -15,6 +15,8 @@ public extension Expr {
             return inners.reduce(1) { $0 * $1.evaluate(at: val) }
         case .power(let base, let exp):
             return base.evaluate(at: val).pow(exp: exp)
+        case .fn(let fn, let expr):
+            return fn.eval(expr.evaluate(at: val))
         }
     }
 }
