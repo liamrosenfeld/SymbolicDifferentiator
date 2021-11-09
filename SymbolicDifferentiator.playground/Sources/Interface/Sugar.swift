@@ -4,9 +4,9 @@ postfix operator ′
 
 public extension Expr {
     //FIXME: - ^ has addition precedence
-    static prefix func -(expr: Expr)    -> Expr { .product([-1 * expr]) }
+    static prefix func -(expr: Expr)    -> Expr { .product([-1, expr]) }
     static func +(lhs: Expr, rhs: Expr) -> Expr { .sum([lhs, rhs]) }
-    static func -(lhs: Expr, rhs: Expr) -> Expr { .sum([lhs, .product([-1 * rhs])]) }
+    static func -(lhs: Expr, rhs: Expr) -> Expr { .sum([lhs, .product([-1, rhs])]) }
     static func *(lhs: Expr, rhs: Expr) -> Expr { .product([lhs, rhs]) }
     static func /(lhs: Expr, rhs: Expr) -> Expr { .product([lhs, .power(rhs, -1)]) }
     static func ^(lhs: Expr, rhs: Decimal) -> Expr { .power(lhs, rhs) }

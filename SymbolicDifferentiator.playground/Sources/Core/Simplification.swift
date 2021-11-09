@@ -75,20 +75,29 @@ public extension Expr {
         }
         
         // reassemble
-        var simplified: [Expr] = []
+        var reduced: [Expr] = []
         if constSum != 0 {
-            simplified.append(.const(constSum))
+            reduced.append(.const(constSum))
         }
         for (expr, coeff) in exprsAndCoefficients {
-            simplified.append(.product([.const(coeff), expr]).simplified())
+            reduced.append(.product([.const(coeff), expr]).simplified())
         }
         
         // unwrap if count is one
-        if simplified.count == 1 {
-            return simplified[0]
+        if reduced.count == 1 {
+            return reduced[0].simplified()
         }
         
-        return .sum(simplified)
+        // flatten and repeat until done
+        let simplified = reduced.map { $0.simplified() }
+        var expr: Expr = .sum(simplified)
+        var flattened = expr.flattened()
+        while expr != flattened {
+            expr = flattened.simplified()
+            flattened = expr.flattened()
+        }
+        
+        return expr
     }
     
     private func simplifyProduct(_ exprs: [Expr]) -> Expr {
@@ -121,25 +130,34 @@ public extension Expr {
         
         // reassemble
         // TODO: group terms of same power together?? -- maybe just a negative power
-        var simplified: [Expr] = []
+        var reduced: [Expr] = []
         if totalCoefficient != 1 {
-            simplified.append(.const(totalCoefficient))
+            reduced.append(.const(totalCoefficient))
         }
         for (expr, exp) in exprsAndExps {
             if exp == 1 {
-                simplified.append(expr)
+                reduced.append(expr)
             } else if exp == 0 {
                 continue
             } else {
-                simplified.append(.power(expr, exp))
+                reduced.append(.power(expr, exp))
             }
         }
         
         // unwrap if count is one
-        if simplified.count == 1 {
-            return simplified[0]
+        if reduced.count == 1 {
+            return reduced[0].simplified()
         }
         
-        return .product(simplified)
+        // flatten and repeat until done
+        let simplified = reduced.map { $0.simplified() }
+        var expr: Expr = .product(simplified)
+        var flattened = expr.flattened()
+        while expr != flattened {
+            expr = flattened.simplified()
+            flattened = expr.flattened()
+        }
+        
+        return expr
     }
 }
