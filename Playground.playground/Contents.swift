@@ -1,3 +1,4 @@
+import SymbolicDifferentiator
 
 func generalTest() {
     print("orig:")
@@ -118,3 +119,4 @@ func newPowerTest() {
 }
 
 newPowerTest()
+

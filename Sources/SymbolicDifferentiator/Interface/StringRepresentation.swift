@@ -102,6 +102,12 @@ public extension Expr {
     }
 }
 
+extension Expr: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        self.toString()
+    }
+}
+
 fileprivate func constToString(_ const: Decimal) -> String {
     let absVal = abs(const)
     if absVal == pi {
