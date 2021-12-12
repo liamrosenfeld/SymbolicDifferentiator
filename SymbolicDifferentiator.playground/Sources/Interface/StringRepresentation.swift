@@ -63,7 +63,7 @@ public extension Expr {
                 return string
             }
         case .power(let base, let exp):
-            return "(\(base.toString()))^\(exp)"
+            return "\(base.toString())^\(exp.toString())"
         case .fn(let fn, let expr):
             return "\(fn.name)(\(expr.toString()))"
         }
@@ -92,8 +92,9 @@ public extension Expr {
             }
             return returnString
         case .power(let base, let exp):
-            return indent + jointSym + "^\(exp)"
+            return indent + jointSym + "^"
             + "\n" + base.prettyTree(indent: newIndent, last: true)
+            + "\n" + exp.prettyTree(indent: newIndent, last: true)
         case .fn(let fn, let expr):
             return indent + jointSym + fn.name
             + "\n" + expr.prettyTree(indent: newIndent, last: true)

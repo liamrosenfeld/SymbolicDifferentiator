@@ -8,25 +8,7 @@ public extension Expr {
         case .product(let exprs):
             return simplifyProduct(exprs)
         case .power(let base, let exp):
-            // 0 and 1 exponents
-            if exp == 0 {
-                return 1
-            } else if exp == 1 {
-                return base.simplified()
-            }
-            
-            // nested powers
-            let bSimple = base.simplified()
-            if case let .power(innerBase, innerExp) = bSimple {
-                return innerBase ^ (exp * innerExp)
-            }
-            
-            // power of a constant
-            if case let .const(val) = bSimple {
-                return .const(val.pow(exp: exp))
-            }
-            
-            return bSimple ^ exp
+            return simplifyPower(base, exp)
         case .fn(let fn, let expr):
             // simplify if expr is a constant that returns an integer
             if case let .const(val) = expr {
@@ -103,7 +85,7 @@ public extension Expr {
     private func simplifyProduct(_ exprs: [Expr]) -> Expr {
         // attributes compacted into
         var totalCoefficient: Decimal = 1
-        var exprsAndExps: [Expr : Decimal] = [:]
+        var exprsAndExps: [Expr : [Expr]] = [:]
         
         // break apart and sort
         // product should have already been flattened
@@ -118,13 +100,13 @@ public extension Expr {
             case .power(let base, let exponent):
                 if case let .product(innerExprs) = base {
                     for innerExpr in innerExprs {
-                        exprsAndExps[innerExpr, default: 0] += exponent
+                        exprsAndExps[innerExpr, default: []].append(1)
                     }
                 } else {
-                    exprsAndExps[base, default: 0] += exponent
+                    exprsAndExps[base, default: []].append(exponent)
                 }
             default:
-                exprsAndExps[simple, default: 0] += 1
+                exprsAndExps[simple, default: []].append(1)
             }
         }
         
@@ -135,12 +117,17 @@ public extension Expr {
             reduced.append(.const(totalCoefficient))
         }
         for (expr, exp) in exprsAndExps {
-            if exp == 1 {
-                reduced.append(expr)
-            } else if exp == 0 {
-                continue
+            let simpExp: Expr = .sum(exp).flattened().simplified()
+            if case let .const(val) = simpExp {
+                if val == 0 {
+                    continue
+                } else if val == 1 {
+                    reduced.append(expr)
+                } else {
+                    reduced.append(.power(base: expr, exp: simpExp))
+                }
             } else {
-                reduced.append(.power(expr, exp))
+                reduced.append(.power(base: expr, exp: simpExp))
             }
         }
         
@@ -159,5 +146,37 @@ public extension Expr {
         }
         
         return expr
+    }
+    
+    private func simplifyPower(_ base: Expr, _ exp: Expr) -> Expr {
+        // 0 and 1 exponents
+        let eSimple = exp.simplified()
+        if case let .const(eVal) = eSimple {
+            if eVal == 0 {
+                return 1
+            } else if eVal == 1 {
+                return base.simplified()
+            }
+        }
+        
+        // nested powers
+        let bSimple = base.simplified()
+        if case let .power(innerBase, innerExp) = bSimple {
+            return innerBase.simplified() ^ (eSimple * innerExp).simplified()
+        }
+        
+        // constant & constant
+        if case let .const(bVal) = bSimple {
+            if case let .const(eVal) = eSimple {
+                return .const(bVal.pow(exp: eVal))
+            } else if case var .product(inners) = eSimple {
+                if let (index, const) = inners.firstConstWithIndex() {
+                    inners.remove(at: index)
+                    return .power(base: .const(bVal.pow(exp: const)), exp: .product(inners).simplified())
+                }
+            }
+        }
+        
+        return bSimple ^ eSimple
     }
 }

@@ -5,7 +5,7 @@ public indirect enum Expr {
     case const(Decimal)
     case sum([Expr])
     case product([Expr])
-    case power(Expr, Decimal)
+    case power(base: Expr, exp: Expr)
     case fn(FuncDecl, Expr)
 }
 

@@ -18,7 +18,20 @@ public extension Expr {
             }
             return .sum(products)
         case .power(let base, let exp):
-            return .const(exp) * (base ^ (exp - 1)) * base.deriv()
+            // Generalized Power Rule:
+            // f^g -> (g * f^(g-1) * f') + (f^g * ln(f) * g')
+            // when f or g is a constant, half will vanish
+            // which turns it into the two commonly taught power rules
+            if case let .const(n) = exp {
+                return .const(n) * (base ^ .const(n - 1)) * base.deriv()
+            } else if case .const(_) = base {
+                return (base ^ exp) * ln(base)
+            } else {
+                return .sum([
+                    .product([exp, (base ^ (exp - 1)), base.deriv()]),
+                    .product([(base ^ exp), ln(base), exp.deriv()])
+                ])
+            }
         case .fn(let fn, let expr):
             return fn.deriv(expr) * expr.deriv()
         }

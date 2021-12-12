@@ -91,4 +91,30 @@ func nestedTest() {
     print(simp.toString())
 }
 
-nestedTest()
+func newPowerTest() {
+    let simpExpr1: Expr = 2 ^ 2
+    let simpExpr2: Expr = 3 ^ (2 * x)
+    let simpExpr3: Expr = x ^ (x+1)
+    let simpExpr4: Expr = x * (x ^ x)
+    let simpExpr5: Expr = x * (x ^ (sin(x) - 1))
+    
+    let derivExpr1: Expr = x ^ 2
+    let derivExpr2: Expr = 2 ^ x
+    let derivExpr3: Expr = x ^ x
+    let derivExpr4: Expr = x ^ sin(x)
+    
+    
+    print(simpExpr1.simplified().toString())
+    print(simpExpr2.simplified().toString())
+    print(simpExpr3.simplified().toString())
+    print(simpExpr4.simplified().toString())
+    print(simpExpr5.simplified().toString())
+    
+    print(derivExpr1.deriv().flattened().simplified().toString())
+    print(derivExpr2.deriv().flattened().simplified().toString())
+    print(derivExpr3.deriv().flattened().simplified().toString())
+    print(derivExpr4.deriv().flattened().simplified().toString())
+    
+}
+
+newPowerTest()

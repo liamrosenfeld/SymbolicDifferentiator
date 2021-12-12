@@ -22,7 +22,7 @@ public extension Expr {
             let needAnother = flattenedInner.contains { if case .product(_) = $0 { return true } else { return false } }
             return needAnother ? .product(flattenedInner).flattened() : .product(flattenedInner)
         case .power(let expr, let exp):
-            return .power(expr.flattened(), exp)
+            return .power(base: expr.flattened(), exp: exp.flattened())
         default:
             return self
         }

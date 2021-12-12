@@ -8,8 +8,8 @@ public extension Expr {
     static func +(lhs: Expr, rhs: Expr) -> Expr { .sum([lhs, rhs]) }
     static func -(lhs: Expr, rhs: Expr) -> Expr { .sum([lhs, .product([-1, rhs])]) }
     static func *(lhs: Expr, rhs: Expr) -> Expr { .product([lhs, rhs]) }
-    static func /(lhs: Expr, rhs: Expr) -> Expr { .product([lhs, .power(rhs, -1)]) }
-    static func ^(lhs: Expr, rhs: Decimal) -> Expr { .power(lhs, rhs) }
+    static func /(lhs: Expr, rhs: Expr) -> Expr { .product([lhs, .power(base: rhs, exp: -1)]) }
+    static func ^(lhs: Expr, rhs: Expr) -> Expr { .power(base: lhs, exp: rhs) }
     
     static postfix func ′(expr: Expr) -> Expr {
         expr.deriv().flattened().simplified()

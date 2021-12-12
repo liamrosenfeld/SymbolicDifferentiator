@@ -29,7 +29,7 @@ extension Array where Element == Expr {
         return nil
     }
     
-    func firstPowOfVar() -> Decimal? {
+    func firstPowOfVar() -> Expr? {
         for expr in self {
             if case .variable = expr {
                 return 1
