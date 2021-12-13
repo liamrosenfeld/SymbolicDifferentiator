@@ -7,30 +7,17 @@ public extension Expr {
             return "x"
         case .const(let const):
             return constToString(const)
-        case .sum(var exprs):
-            var string = "(\(exprs.removeFirst().toString())"
+        case .sum(let exprs):
+            var exprs = exprs.asArray
+            var string = "(\(exprs.removeFirstPositiveOrFirst().toString())" // don't list a negative first if possible
             for expr in exprs {
                 if case let .const(val) = expr {
                     let sign = val < 0 ? "-" : "+"
                     string += " \(sign) \(constToString(abs(val)))"
                 } else if case var .product(inner) = expr {
-                    let sign: String = {
-                        guard let (index, const) = inner.firstConstWithIndex() else {
-                            return "+"
-                        }
-                        if const < 0 {
-                            if const == -1 {
-                                inner.remove(at: index)
-                            } else {
-                                inner[index] = .const(abs(const))
-                            }
-                            return "-"
-                        } else {
-                            return "+"
-                        }
-                    }()
+                    let sign = inner.removeFirstNegative() ? "-" : "+"
                     if inner.count == 1 {
-                        string += " \(sign) \(inner[0].toString())"
+                        string += " \(sign) \(inner.asArray[0].toString())"
                     } else {
                         string += " \(sign) \(Expr.product(inner).toString())"
                     }
@@ -40,17 +27,15 @@ public extension Expr {
             }
             string += ")"
             return string
-        case .product(var exprs):
+        case .product(let exprs):
+            var exprs = exprs.asArray
             // if constant and expression,
             // pull out a constant and display it as a coefficient
-            if exprs.count == 2,
-               let firstConstIndex = exprs.firstConstIndex()
-            {
-                let firstConst = exprs.remove(at: firstConstIndex)
+            if exprs.count == 2, let firstConst = exprs.removeFirstConst() {
                 if (firstConst == -1) {
                     return "-\(exprs[0].toString())"
                 } else {
-                    return "\(firstConst.toString())\(exprs[0].toString())"
+                    return "\(constToString(firstConst))\(exprs[0].toString())"
                 }
             }
             // display it normally
@@ -80,14 +65,13 @@ public extension Expr {
             return indent + jointSym + constToString(const)
         case .sum(let exprs):
             var returnString = indent + jointSym + "+"
-            for (index, expr) in exprs.enumerated() {
+            for (index, expr) in exprs.asArray.enumerated() {
                 returnString += "\n" + expr.prettyTree(indent: newIndent, last: index == exprs.count - 1)
             }
             return returnString
-            
         case .product(let exprs):
             var returnString = indent + jointSym + "*"
-            for (index, expr) in exprs.enumerated() {
+            for (index, expr) in exprs.asArray.enumerated() {
                 returnString += "\n" + expr.prettyTree(indent: newIndent, last: index == exprs.count - 1)
             }
             return returnString

@@ -3,8 +3,8 @@ import Foundation
 public indirect enum Expr {
     case variable // could take name as associated type to support multiple vars
     case const(Decimal)
-    case sum([Expr])
-    case product([Expr])
+    case sum(Multiset<Expr>)
+    case product(Multiset<Expr>)
     case power(base: Expr, exp: Expr)
     case fn(FuncDecl, Expr)
 }

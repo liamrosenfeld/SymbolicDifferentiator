@@ -2,24 +2,34 @@ public extension Expr {
     func flattened() -> Expr {
         switch self {
         case .sum(let innerExprs):
-            let flattenedInner: [Expr] = innerExprs.flatMap { expr -> [Expr] in
+            var flattenedInner: Multiset<Expr> = []
+            for (expr, count) in innerExprs {
                 if case let .sum(innerExprs) = expr {
-                    return innerExprs.map { $0.flattened() }
+                    for (innerExpr, innerCount) in innerExprs {
+                        flattenedInner.add(innerExpr.flattened(), amount: innerCount)
+                    }
                 } else {
-                    return [expr.flattened()]
+                    flattenedInner.add(expr.flattened(), amount: count)
                 }
             }
-            let needAnother = flattenedInner.contains { if case .sum(_) = $0 { return true } else { return false } }
+            let needAnother = flattenedInner.contains { (elem, _) in
+                if case .sum(_) = elem { return true } else { return false }
+            }
             return needAnother ? .sum(flattenedInner).flattened() : .sum(flattenedInner)
         case .product(let innerExprs):
-            let flattenedInner: [Expr] = innerExprs.flatMap { expr -> [Expr] in
+            var flattenedInner: Multiset<Expr> = []
+            for (expr, count) in innerExprs {
                 if case let .product(innerExprs) = expr {
-                    return innerExprs.map { $0.flattened() }
+                    for (innerExpr, innerCount) in innerExprs {
+                        flattenedInner.add(innerExpr.flattened(), amount: innerCount)
+                    }
                 } else {
-                    return [expr.flattened()]
+                    flattenedInner.add(expr.flattened(), amount: count)
                 }
             }
-            let needAnother = flattenedInner.contains { if case .product(_) = $0 { return true } else { return false } }
+            let needAnother = flattenedInner.contains { (elem, _) in
+                if case .product(_) = elem { return true } else { return false }
+            }
             return needAnother ? .product(flattenedInner).flattened() : .product(flattenedInner)
         case .power(let expr, let exp):
             return .power(base: expr.flattened(), exp: exp.flattened())

@@ -27,13 +27,13 @@ public extension Expr {
         }
     }
     
-    private func simplifySum(_ exprs: [Expr]) -> Expr {
+    private func simplifySum(_ exprs: Multiset<Expr>) -> Expr {
         // attributes compacted into
         var constSum: Decimal = 0
         var exprsAndCoefficients: [Expr : Decimal] = [:]
         
         // break apart and sort
-        for expr in exprs {
+        for (expr, count) in exprs {
             let simple = expr.simplified()
             
             // nested sums should have already been lifted to top level
@@ -42,17 +42,16 @@ public extension Expr {
                 constSum += const
             case .product(var inners):
                 let coefficient: Decimal = {
-                    if let (index, coeff) = inners.firstConstWithIndex() {
-                        inners.remove(at: index)
+                    if let coeff = inners.removeFirstConst() {
                         return coeff
                     } else {
                         return 1
                     }
                 }()
-                let simplified = inners.map { $0.simplified() }
-                exprsAndCoefficients[.product(simplified), default: 0] += coefficient
+                let simplified = inners.simplifyAll()
+                exprsAndCoefficients[.product(simplified), default: 0] += coefficient * Decimal(count)
             default:
-                exprsAndCoefficients[simple, default: 0] += 1
+                exprsAndCoefficients[simple, default: 0] += Decimal(count)
             }
         }
         
@@ -72,7 +71,7 @@ public extension Expr {
         
         // flatten and repeat until done
         let simplified = reduced.map { $0.simplified() }
-        var expr: Expr = .sum(simplified)
+        var expr: Expr = .sum(Multiset(simplified))
         var flattened = expr.flattened()
         while expr != flattened {
             expr = flattened.simplified()
@@ -82,14 +81,14 @@ public extension Expr {
         return expr
     }
     
-    private func simplifyProduct(_ exprs: [Expr]) -> Expr {
+    private func simplifyProduct(_ exprs: Multiset<Expr>) -> Expr {
         // attributes compacted into
         var totalCoefficient: Decimal = 1
-        var exprsAndExps: [Expr : [Expr]] = [:]
+        var exprsAndExps: [Expr : Multiset<Expr>] = [:]
         
         // break apart and sort
         // product should have already been flattened
-        for expr in exprs {
+        for (expr, count) in exprs {
             let simple = expr.simplified()
             switch simple {
             case .const(let const):
@@ -99,22 +98,22 @@ public extension Expr {
                 totalCoefficient *= const
             case .power(let base, let exponent):
                 if case let .product(innerExprs) = base {
-                    for innerExpr in innerExprs {
-                        exprsAndExps[innerExpr, default: []].append(1)
+                    for (innerExpr, innerCount) in innerExprs {
+                        exprsAndExps[innerExpr, default: []].add(.const(Decimal(innerCount * count)))
                     }
                 } else {
-                    exprsAndExps[base, default: []].append(exponent)
+                    exprsAndExps[base, default: []].add(.product([exponent, .const(Decimal(count))]).flattened().simplified())
                 }
             default:
-                exprsAndExps[simple, default: []].append(1)
+                exprsAndExps[simple, default: []].add(.const(Decimal(count)))
             }
         }
         
         // reassemble
         // TODO: group terms of same power together?? -- maybe just a negative power
-        var reduced: [Expr] = []
+        var reduced: Multiset<Expr> = []
         if totalCoefficient != 1 {
-            reduced.append(.const(totalCoefficient))
+            reduced.add(.const(totalCoefficient))
         }
         for (expr, exp) in exprsAndExps {
             let simpExp: Expr = .sum(exp).flattened().simplified()
@@ -122,23 +121,22 @@ public extension Expr {
                 if val == 0 {
                     continue
                 } else if val == 1 {
-                    reduced.append(expr)
+                    reduced.add(expr)
                 } else {
-                    reduced.append(.power(base: expr, exp: simpExp))
+                    reduced.add(.power(base: expr, exp: simpExp))
                 }
             } else {
-                reduced.append(.power(base: expr, exp: simpExp))
+                reduced.add(.power(base: expr, exp: simpExp))
             }
         }
         
         // unwrap if count is one
         if reduced.count == 1 {
-            return reduced[0].simplified()
+            return reduced.asArray[0].simplified()
         }
         
         // flatten and repeat until done
-        let simplified = reduced.map { $0.simplified() }
-        var expr: Expr = .product(simplified)
+        var expr: Expr = .product(reduced.simplifyAll())
         var flattened = expr.flattened()
         while expr != flattened {
             expr = flattened.simplified()
@@ -170,8 +168,7 @@ public extension Expr {
             if case let .const(eVal) = eSimple {
                 return .const(bVal.pow(exp: eVal))
             } else if case var .product(inners) = eSimple {
-                if let (index, const) = inners.firstConstWithIndex() {
-                    inners.remove(at: index)
+                if let const = inners.removeFirstConst() {
                     return .power(base: .const(bVal.pow(exp: const)), exp: .product(inners).simplified())
                 }
             }
